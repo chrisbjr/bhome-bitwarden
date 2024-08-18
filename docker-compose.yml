@@ -1,0 +1,38 @@
+services:
+  bitwarden:
+    image: vaultwarden/server:latest
+    container_name: bitwarden
+    restart: always
+    environment:
+      - WEBSOCKET_ENABLED=true
+      - SIGNUPS_ALLOWED=false
+      - DOMAIN=${BITWARDEN_DOMAIN}
+    volumes:
+      - ./bitwarden-data:/data
+    ports:
+      - "80:80"
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+
+  bitwarden-cf-tunnel:
+    container_name: bitwarden-cf-tunnel
+    image: cloudflare/cloudflared:latest
+    command: tunnel --no-autoupdate run --token ${BITWARDEN_CF_TUNNEL_TOKEN}
+    restart: unless-stopped
+    network_mode: host
+    profiles:
+      - cloudflare
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+
+  watchtower:
+    image: containrrr/watchtower
+    container_name: watchtower
+    restart: always
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - WATCHTOWER_CLEANUP=true
+      - WATCHTOWER_SCHEDULE=0 0 4 * * *  # Run daily at 4:00 AM
+      - WATCHTOWER_NOTIFICATIONS=shoutrrr
+      - "WATCHTOWER_NOTIFICATION_URL=smtp://${MAIL_USERNAME}:${MAIL_PASSWORD}@${MAIL_HOST}:${MAIL_PORT}/?from=${MAIL_FROM}&to=${MAIL_TO}"
