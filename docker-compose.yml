@@ -5,7 +5,7 @@ services:
     restart: always
     environment:
       - WEBSOCKET_ENABLED=true
-      - SIGNUPS_ALLOWED=${BITWARDEN_SIGNUPS_ALLOWED}
+      - SIGNUPS_ALLOWED=${BITWARDEN_SIGNUPS_ALLOWED:-false}
       - DOMAIN=${BITWARDEN_DOMAIN}
     volumes:
       - ./bitwarden-data:/data
@@ -36,3 +36,19 @@ services:
       - WATCHTOWER_SCHEDULE=0 0 4 * * *  # Run daily at 4:00 AM
       - WATCHTOWER_NOTIFICATIONS=shoutrrr
       - "WATCHTOWER_NOTIFICATION_URL=smtp://${MAIL_USERNAME}:${MAIL_PASSWORD}@${MAIL_HOST}:${MAIL_PORT}/?from=${MAIL_FROM}&to=${MAIL_TO}"
+
+  duplicati:
+    image: lscr.io/linuxserver/duplicati:latest
+    container_name: duplicati
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Asia/Manila
+      - CLI_ARGS= #optional
+    volumes:
+      - ./duplicati/config:/config
+      - ./duplicati/backups:/backups
+      - ./:/source
+    ports:
+      - 8200:8200
+    restart: unless-stopped
